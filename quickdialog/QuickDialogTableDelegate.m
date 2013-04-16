@@ -133,6 +133,20 @@
     }
 }
 
+// Left padding of grouped tableView section is a non-constant on iPad, unlike iPhone
+// Stackoverflow has a discussion of the problems involved
+// http://stackoverflow.com/questions/4708085/how-to-determine-margin-of-a-grouped-uitableview-or-better-how-to-set-it
+-(CGFloat)leftMarginForTableView:(UITableView*)tableView
+{
+    if (tableView.style != UITableViewStyleGrouped) return 0;
+    CGFloat tableWidth = tableView.bounds.size.width;
+    if ((UI_USER_INTERFACE_IDIOM()==UIUserInterfaceIdiomPhone)) return (10.0f);
+    if (tableWidth <= 400.0f) return (10.0f);
+    if (tableWidth <= 546.0f) return (31.0f);
+    if (tableWidth >= 720.0f) return (45.0f);
+    return (31.0f + ceilf((tableWidth - 547.0f)/13.0f));
+}
+
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)index {
     QSection *section = [_tableView.root getVisibleSectionForIndex:index];
     NSString *title = [tableView.dataSource tableView:tableView titleForHeaderInSection:index];
@@ -145,7 +159,19 @@
         containerView.backgroundColor = [UIColor clearColor];
         containerView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
 
-        UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(20, 10, tableView.frame.size.width-40, [self tableView:tableView heightForHeaderInSection:index]-10)];
+        // Get leftMargin width for grouped tableView
+        CGFloat leftMargin = [self leftMarginForTableView:tableView];
+        // Section cell left padding - defaults to 10 points.
+        // Should really be calculated as a percentage of em width for appearance.entryFont
+        // Set as a variable here for future reference
+        CGFloat sectionEntryLeftPadding = 10.0;
+        UILabel *label = [[UILabel alloc]
+                          initWithFrame:CGRectMake(
+                                                   leftMargin + sectionEntryLeftPadding,
+                                                   10,
+                                                   tableView.frame.size.width-sectionEntryLeftPadding-(leftMargin*2),
+                                                   [self tableView:tableView heightForHeaderInSection:index]-10)];
+        
         label.autoresizingMask = UIViewAutoresizingFlexibleWidth;
         label.text = title;
         [containerView addSubview:label];
